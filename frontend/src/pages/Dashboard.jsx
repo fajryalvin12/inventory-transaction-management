@@ -1,7 +1,10 @@
 import Card from "../components/Card";
 import Modal from "../components/Modal";
 import { getDashboardSummary } from "../services/dashboardServices";
-import { getTransactionsList, getTransactionDetails } from "../services/transactionServices";
+import {
+  getTransactionsList,
+  getTransactionDetails,
+} from "../services/transactionServices";
 import { useEffect, useState } from "react";
 
 function Dashboard() {
@@ -10,6 +13,9 @@ function Dashboard() {
   const [trxDetails, setTrxDetails] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  console.log("transactions : ", transactions);
+  console.log("trxDetails : ", trxDetails);
 
   useEffect(() => {
     async function fetchData() {
@@ -30,10 +36,30 @@ function Dashboard() {
   }, []);
 
   const overview = [
-    { icon: "📦", count: summary?.totalProducts || 0, status: "Total Products", trend: 5 },
-    { icon: "🛒", count: summary?.totalTransactions || 0, status: "Total Orders", trend: 12 },
-    { icon: "💰", count: summary?.totalRevenue || 0, status: "Revenue", trend: 8 },
-    { icon: "⚠️", count: summary?.lowStockProducts || 0, status: "Low Stock", trend: -3 },
+    {
+      icon: "📦",
+      count: summary?.totalProducts || 0,
+      status: "Total Products",
+      trend: 5,
+    },
+    {
+      icon: "🛒",
+      count: summary?.totalTransactions || 0,
+      status: "Total Orders",
+      trend: 12,
+    },
+    {
+      icon: "💰",
+      count: summary?.totalRevenue || 0,
+      status: "Revenue",
+      trend: 8,
+    },
+    {
+      icon: "⚠️",
+      count: summary?.lowStockProducts || 0,
+      status: "Low Stock",
+      trend: -3,
+    },
   ];
 
   const handleDetailTrx = async (id) => {
@@ -64,8 +90,12 @@ function Dashboard() {
       {/* Recent Transactions */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-          <h2 className="font-semibold text-gray-800 text-sm">Recent Transactions</h2>
-          <span className="text-xs text-gray-400">{transactions.length} entries</span>
+          <h2 className="font-semibold text-gray-800 text-sm">
+            Recent Transactions
+          </h2>
+          <span className="text-xs text-gray-400">
+            {transactions.length} entries
+          </span>
         </div>
 
         {loading ? (
@@ -89,7 +119,7 @@ function Dashboard() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {transactions.map((trx) => (
+              {transactions.data.map((trx) => (
                 <tr key={trx.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-3 text-sm text-gray-500 font-mono">
                     #{String(trx.id).padStart(4, "0")}
@@ -99,7 +129,9 @@ function Dashboard() {
                       <div className="w-7 h-7 rounded-full bg-indigo-100 text-indigo-700 text-xs font-bold flex items-center justify-center">
                         {trx.user.username[0].toUpperCase()}
                       </div>
-                      <span className="text-sm text-gray-700">{trx.user.username}</span>
+                      <span className="text-sm text-gray-700">
+                        {trx.user.username}
+                      </span>
                     </div>
                   </td>
                   <td className="px-6 py-3 text-sm font-semibold text-gray-800">
@@ -130,20 +162,27 @@ function Dashboard() {
       {/* Transaction Detail Modal */}
       <Modal
         isOpen={modalOpen}
-        onClose={() => { setModalOpen(false); setTrxDetails(null); }}
+        onClose={() => {
+          setModalOpen(false);
+          setTrxDetails(null);
+        }}
         title={`Transaction #${String(trxDetails?.id || 0).padStart(4, "0")}`}
       >
         {trxDetails ? (
           <div className="flex flex-col gap-3">
             <div className="flex justify-between text-sm text-gray-500">
               <span>Cashier</span>
-              <span className="font-medium text-gray-800">{trxDetails.user_id}</span>
+              <span className="font-medium text-gray-800">
+                {trxDetails.user_id}
+              </span>
             </div>
             <div className="flex justify-between text-sm text-gray-500">
               <span>Date</span>
               <span className="font-medium text-gray-800">
                 {new Date(trxDetails.created_at).toLocaleDateString("id-ID", {
-                  day: "2-digit", month: "long", year: "numeric",
+                  day: "2-digit",
+                  month: "long",
+                  year: "numeric",
                 })}
               </span>
             </div>
@@ -152,8 +191,12 @@ function Dashboard() {
               {trxDetails.items?.map((item, i) => (
                 <div key={i} className="flex justify-between text-sm">
                   <div>
-                    <p className="font-medium text-gray-800">{item.product?.name}</p>
-                    <p className="text-xs text-gray-400">x{item.quantity} × Rp {item.price.toLocaleString("id-ID")}</p>
+                    <p className="font-medium text-gray-800">
+                      {item.product?.name}
+                    </p>
+                    <p className="text-xs text-gray-400">
+                      x{item.quantity} × Rp {item.price.toLocaleString("id-ID")}
+                    </p>
                   </div>
                   <span className="font-semibold text-gray-700">
                     Rp {item.subtotal.toLocaleString("id-ID")}

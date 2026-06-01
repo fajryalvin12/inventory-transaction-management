@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import Modal from "../components/Modal";
-import { getProducts, deleteProduct } from "../services/productServices";
+import ProductFormModal from "../components/ProductFormModal";
+import { getProducts, createProduct, updateProduct, deleteProduct } from "../services/productServices";
 
 const STATUS_COLORS = {
   Available: "bg-green-50 text-green-700",
@@ -14,6 +15,7 @@ function ProductList() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [formModal, setFormModal] = useState({ open: false, product: null });
   const [deleteModal, setDeleteModal] = useState({ open: false, product: null });
   const limit = 10;
 
@@ -30,13 +32,20 @@ function ProductList() {
     }
   };
 
-  useEffect(() => {
-    fetchProducts();
-  }, [page, statusFilter]);
+  useEffect(() => { fetchProducts(); }, [page, statusFilter]);
 
   const handleSearch = (e) => {
     e.preventDefault();
     setPage(1);
+    fetchProducts();
+  };
+
+  const handleFormSubmit = async (data) => {
+    if (formModal.product) {
+      await updateProduct(formModal.product.id, data);
+    } else {
+      await createProduct(data);
+    }
     fetchProducts();
   };
 
@@ -58,7 +67,10 @@ function ProductList() {
           <h2 className="text-base font-semibold text-gray-800">Products</h2>
           <p className="text-xs text-gray-400 mt-0.5">Manage your product inventory</p>
         </div>
-        <button className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors cursor-pointer">
+        <button
+          onClick={() => setFormModal({ open: true, product: null })}
+          className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors cursor-pointer"
+        >
           <span className="text-base leading-none">＋</span>
           Add Product
         </button>
@@ -108,9 +120,7 @@ function ProductList() {
           <tbody className="divide-y divide-gray-50">
             {loading ? (
               <tr>
-                <td colSpan={6} className="text-center py-16 text-sm text-gray-400">
-                  Loading...
-                </td>
+                <td colSpan={6} className="text-center py-16 text-sm text-gray-400">Loading...</td>
               </tr>
             ) : products.length === 0 ? (
               <tr>
@@ -134,29 +144,22 @@ function ProductList() {
                     Rp {product.price.toLocaleString("id-ID")}
                   </td>
                   <td className="px-6 py-3">
-                    <span
-                      className={`text-sm font-medium ${
-                        product.quantity <= 10 ? "text-amber-600" : "text-gray-700"
-                      }`}
-                    >
+                    <span className={`text-sm font-medium ${product.quantity <= 10 ? "text-amber-600" : "text-gray-700"}`}>
                       {product.quantity}
-                      {product.quantity <= 10 && (
-                        <span className="ml-1 text-xs">⚠️</span>
-                      )}
+                      {product.quantity <= 10 && <span className="ml-1 text-xs">⚠️</span>}
                     </span>
                   </td>
                   <td className="px-6 py-3">
-                    <span
-                      className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
-                        STATUS_COLORS[product.status] || "bg-gray-100 text-gray-500"
-                      }`}
-                    >
+                    <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${STATUS_COLORS[product.status] || "bg-gray-100 text-gray-500"}`}>
                       {product.status}
                     </span>
                   </td>
                   <td className="px-6 py-3">
                     <div className="flex gap-2">
-                      <button className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg transition-colors cursor-pointer">
+                      <button
+                        onClick={() => setFormModal({ open: true, product })}
+                        className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
+                      >
                         Edit
                       </button>
                       <button
@@ -199,6 +202,14 @@ function ProductList() {
         )}
       </div>
 
+      {/* Add / Edit Modal */}
+      <ProductFormModal
+        isOpen={formModal.open}
+        onClose={() => setFormModal({ open: false, product: null })}
+        onSubmit={handleFormSubmit}
+        product={formModal.product}
+      />
+
       {/* Delete Confirmation Modal */}
       <Modal
         isOpen={deleteModal.open}
@@ -208,10 +219,8 @@ function ProductList() {
         <div className="flex flex-col gap-4">
           <p className="text-sm text-gray-600">
             Are you sure you want to delete{" "}
-            <span className="font-semibold text-gray-800">
-              {deleteModal.product?.name}
-            </span>
-            ? This action cannot be undone.
+            <span className="font-semibold text-gray-800">{deleteModal.product?.name}</span>?
+            This action cannot be undone.
           </p>
           <div className="flex gap-3 justify-end">
             <button
